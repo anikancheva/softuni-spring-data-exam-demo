@@ -1,11 +1,13 @@
 package softuni.exam.service.impl;
 
 import org.springframework.stereotype.Service;
+import softuni.exam.models.dto.BestOfferExportDto;
 import softuni.exam.models.dto.OfferImportDtos.OfferImportDto;
 import softuni.exam.models.dto.OfferImportDtos.OffersRootDto;
 import softuni.exam.models.entity.Agent;
 import softuni.exam.models.entity.Apartment;
 import softuni.exam.models.entity.Offer;
+import softuni.exam.models.entity.RoomsEnum;
 import softuni.exam.repository.AgentRepository;
 import softuni.exam.repository.ApartmentRepository;
 import softuni.exam.repository.OfferRepository;
@@ -18,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -79,6 +82,21 @@ public class OfferServiceImpl implements OfferService {
 
     @Override
     public String exportOffers() {
-        return null;
+        List<BestOfferExportDto> bestOffers=new ArrayList<>();
+        List<Apartment> filteredApartments = apartmentRepository.findAllByApartmentTypeOrderByAreaDesc(RoomsEnum.three_rooms);
+        for(Apartment apartment:filteredApartments){
+            List<Offer> apartmentOffers = offerRepository.findAllByApartmentIdOrderByPriceAsc(apartment.getId());
+            double area=apartment.getArea();
+            String town=apartment.getTown().getTownName();
+            for(Offer offer:apartmentOffers){
+                String agentFullName=offer.getAgent().getFirstName()+" "+offer.getAgent().getLastName();
+                bestOffers.add(new BestOfferExportDto(agentFullName, offer.getId(), area, town, offer.getPrice()));
+            }
+        }
+
+        StringBuilder bestOffersSting=new StringBuilder();
+        bestOffers.forEach(bestOffersSting::append);
+
+        return bestOffersSting.toString();
     }
 }
